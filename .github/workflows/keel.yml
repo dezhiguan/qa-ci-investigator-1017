@@ -12,8 +12,12 @@ jobs:
           python-version: "3.11"
       - name: Install keel-sdk from the GitHub Release
         env:
-          KEEL_GITHUB_TOKEN: ${{ github.token }}
-        run: python scripts/install-keel-sdk.py
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(cat .keel-sdk-version)
+          mkdir -p vendor
+          gh release download "sdk-v${version}" --repo dezhiguan/keel --pattern "keel_sdk-${version}-py3-none-any.whl" --dir vendor
+          pip install vendor/keel_sdk-*.whl
       - name: Install locked dependencies
         run: pip install -r requirements.lock
       - name: Unit tests
