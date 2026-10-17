@@ -36,7 +36,7 @@ async def test_execute_missing_both_ids():
     ctx = MagicMock()
     result = await __import__("role").execute({"text": "No IDs given"}, ctx)
     assert result["decision"] == "BLOCKED"
-    assert "neither CI run ID nor PR number" in result["reason"].lower()
+    assert "Neither CI run ID nor PR number provided." in result["reason"]
 
 
 @pytest.mark.asyncio
@@ -44,7 +44,7 @@ async def test_execute_invalid_pr_negative():
     ctx = MagicMock()
     result = await __import__("role").execute({"text": "CI run 447, PR #-5"}, ctx)
     assert result["decision"] == "BLOCKED"
-    assert "invalid PR number" in result["reason"].lower()
+    assert "Invalid PR number '-5': must be a positive integer." in result["reason"]
 
 
 @pytest.mark.asyncio
@@ -56,8 +56,13 @@ async def test_execute_tool_failure_all_three():
     ctx.llm = MagicMock()
     ctx.llm.chat = AsyncMock(return_value={"content": "{\"failed_step\":\"x\"}"})
     ctx.tools = MagicMock()
-    ctx.tools.call = AsyncMock(side_effect=Exception("access denied"))
+    # Simulate all three tools failing
+    ctx.tools.call = AsyncMock(side_effect=[
+        Exception("access denied"),
+        Exception("unauthorized"),
+        Exception("timeout")
+    ])
 
     result = await __import__("role").execute({"text": "CI run 448, PR #35"}, ctx)
     assert result["decision"] == "BLOCKED"
-    assert "all three required tools failed" in result["reason"].lower()
+    assert "All three required tools failed" in result["reason"]

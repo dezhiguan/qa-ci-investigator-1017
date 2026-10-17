@@ -8,7 +8,10 @@ async def execute(data: dict, ctx) -> dict:
     # Extract CI run ID and PR number from input text
     text = data.get("text", "")
     if not isinstance(text, str):
-        return {"decision": "BLOCKED", "reason": "Input 'text' must be a string."}
+        return {
+            "decision": "BLOCKED",
+            "reason": "Input 'text' must be a string."
+        }
 
     # Parse CI run ID and PR number using robust regex
     ci_match = re.search(r"CI\s+run\s+(\d+)", text, re.IGNORECASE)
@@ -36,7 +39,7 @@ async def execute(data: dict, ctx) -> dict:
             "reason": f"Invalid PR number '{pr_number}': must be a positive integer."
         }
 
-    # If only one is present, block — binding is required per H1 pending item
+    # Block if only one is present — binding is required per H1 pending item
     if (ci_run_id and not pr_number) or (pr_number and not ci_run_id):
         return {
             "decision": "BLOCKED",
@@ -77,7 +80,7 @@ async def execute(data: dict, ctx) -> dict:
     except Exception as e:
         tool_results["pr_diff"] = {"error": str(e)}
 
-    # Check for critical tool failures
+    # Check for critical tool failures: all three failed → BLOCKED
     critical_failures = [
         key for key, val in tool_results.items()
         if isinstance(val, dict) and "error" in val
